@@ -4,12 +4,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 
+import lombok.extern.slf4j.Slf4j;
 import tools.jackson.databind.JsonNode;
 import tv.maze.model.ShowDTO;
+import tv.maze.model.ShowFull;
 
-
+@Slf4j
 @Service
 public class TvMazeService {
 
@@ -36,20 +40,19 @@ public class TvMazeService {
                 .body(JsonNode.class);
 
         
-    	} catch (org.springframework.web.client.RestClientResponseException ex) {
-    	    String errorHtml = ex.getResponseBodyAsString(); 
-    	    System.err.println("Código: " + ex.getStatusCode());
-    	    System.err.println("Error: " + errorHtml);
+    	} catch (RestClientResponseException ex) {
+    	    log.error("Código: " + ex.getStatusCode());
+    	    log.error("Error: " + ex.getResponseBodyAsString());
     	    
-    	} catch (org.springframework.web.client.UnknownContentTypeException ex) {
-    	    String rawBody = ex.getResponseBodyAsString();
-    	    System.err.println("Mensaje: " + rawBody);
+    	    throw HttpClientErrorException.create(
+                    ex.getStatusCode(), 
+                    ex.getStatusText(), 
+                    ex.getResponseHeaders(), 
+                    ex.getResponseBodyAsByteArray(), 
+                    null
+            ); 
+    	      
     	}
-    	
-    	
-        if (rootArray == null || !rootArray.isArray()) {
-            return shows;
-        }
     	
         for (JsonNode resultNode : rootArray) {
 
@@ -82,4 +85,32 @@ public class TvMazeService {
         }
     	return shows;
     }
+    
+    
+    public ShowFull obtenerDetalleShow(int id) {
+    	
+    	try {
+    	
+        return restClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/shows/{id}")
+                        .build(id))
+                .retrieve()
+                .body(ShowFull.class);
+        
+    	} catch (RestClientResponseException ex) {
+    	    log.error("Código: " + ex.getStatusCode());
+    	    log.error("Error: " + ex.getResponseBodyAsString());
+   	    
+    	    throw HttpClientErrorException.create(
+                    ex.getStatusCode(), 
+                    ex.getStatusText(), 
+                    ex.getResponseHeaders(), 
+                    ex.getResponseBodyAsByteArray(), 
+                    null
+            );     
+    	}
+ 
+    }
+
 }
