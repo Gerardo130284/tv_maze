@@ -3,7 +3,6 @@ package tv.maze.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
-
 public record ShowFull (
     int id,
     String url,

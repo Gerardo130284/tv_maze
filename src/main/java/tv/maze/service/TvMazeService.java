@@ -2,31 +2,36 @@ package tv.maze.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 
 import lombok.extern.slf4j.Slf4j;
 import tools.jackson.databind.JsonNode;
-import tv.maze.model.ShowDTO;
+import tv.maze.repository.ShowFullRepository;
 import tv.maze.model.ShowFull;
+import tv.maze.model.ShowFullDocument;
+import tv.maze.model.ShowShort;
 
 @Slf4j
 @Service
 public class TvMazeService {
 
     private final RestClient restClient;
-    
-    public TvMazeService(RestClient restClient) {
-        this.restClient = restClient;
-    }
+    private final ShowFullRepository showFullRepository;
 
+    public TvMazeService(RestClient restClient, ShowFullRepository showFullRepository) {
+        this.restClient = restClient;
+        this.showFullRepository = showFullRepository;
+    }
     
-    public List<ShowDTO> obtenerShows(String query) {
+    public List<ShowShort> obtenerShows(String query) {
     	
-    	List<ShowDTO> shows = new ArrayList<ShowDTO>();
+    	List<ShowShort> shows = new ArrayList<ShowShort>();
     	JsonNode rootArray = null;
     	
     	try {
@@ -80,7 +85,7 @@ public class TvMazeService {
                 }
             }
 
-            shows.add(new ShowDTO(id, name, channel, summary, genres));        	
+            shows.add(new ShowShort(id, name, channel, summary, genres));        	
         	
         }
     	return shows;
@@ -111,6 +116,47 @@ public class TvMazeService {
             );     
     	}
  
+    }
+    
+
+    public ShowFull getShowById(int id) {
+        try {
+            // Existe en Mongo?
+            Optional<ShowFullDocument> cachedDocument = showFullRepository.findById(id);
+            
+            if (cachedDocument.isPresent()) {
+                log.info("Show ID {} desde MongoDB.", id);
+                return cachedDocument.get().toAPIResponse(); 
+            }
+
+            log.info("Show ID {} desde API de TVmaze.", id);
+            
+            ShowFull apiResponse = restClient.get()
+                    .uri(uriBuilder -> uriBuilder.path("/shows/{id}").build(id))
+                    .retrieve()
+                    .body(ShowFull.class);
+
+            if (apiResponse != null) {
+                var documentToCache = ShowFullDocument.toDocumentMongo(apiResponse);
+                showFullRepository.save(documentToCache);
+                log.info("Show ID {} guardado en MongoDB.", id);
+            }
+
+            return apiResponse;
+
+        } catch (RestClientResponseException e) {
+            log.error("Error al consumir la API de TVmaze, Código: {}", e.getStatusCode());
+            if (e.getStatusCode().is4xxClientError()) {
+                throw HttpClientErrorException.create(
+                        e.getStatusCode(), e.getStatusText(), e.getResponseHeaders(), e.getResponseBodyAsByteArray(), null);
+            } else {
+                throw HttpServerErrorException.create(
+                        e.getStatusCode(), e.getStatusText(), e.getResponseHeaders(), e.getResponseBodyAsByteArray(), null);
+            }
+        } catch (Exception e) {
+            log.error("Fallo general para el show ID {}: {}", id, e.getMessage());
+            throw new RuntimeException("Error General", e);
+        }
     }
 
 }

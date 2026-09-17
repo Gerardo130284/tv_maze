@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import tv.maze.model.ShowFull;
-import tv.maze.model.ShowDTO;
+import tv.maze.model.ShowShort;
 import tv.maze.service.TvMazeService;
 
 
@@ -26,10 +26,10 @@ public class TvMazeController {
     
 
     @GetMapping("/search")
-    public ResponseEntity<List<ShowDTO>> buscar (
+    public ResponseEntity<List<ShowShort>> buscar (
             @RequestParam(name = "search_query", required = false) String query){
         
-        List<ShowDTO> shows = tvMazeService.obtenerShows(query);
+        List<ShowShort> shows = tvMazeService.obtenerShows(query);
         return ResponseEntity.ok(shows);
     }
     
@@ -38,7 +38,7 @@ public class TvMazeController {
     public ResponseEntity<ShowFull> detalleShow (
     		@PathVariable(name = "show_id", required = true) int id){   
     	
-        ShowFull show = tvMazeService.obtenerDetalleShow(id);
+        ShowFull show = tvMazeService.getShowById(id);
         return ResponseEntity.ok(show);
     }
 }
