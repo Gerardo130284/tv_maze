@@ -4,6 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.dao.DataAccessException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
@@ -12,7 +16,9 @@ import org.springframework.web.client.RestClientResponseException;
 
 import lombok.extern.slf4j.Slf4j;
 import tools.jackson.databind.JsonNode;
+import tv.maze.repository.CommentsRepository;
 import tv.maze.repository.ShowFullRepository;
+import tv.maze.model.Comments;
 import tv.maze.model.ShowFull;
 import tv.maze.model.ShowFullDocument;
 import tv.maze.model.ShowShort;
@@ -23,10 +29,12 @@ public class TvMazeService {
 
     private final RestClient restClient;
     private final ShowFullRepository showFullRepository;
+    private final CommentsRepository commentsRepository;
 
-    public TvMazeService(RestClient restClient, ShowFullRepository showFullRepository) {
+    public TvMazeService(RestClient restClient, ShowFullRepository showFullRepository, CommentsRepository commentsRepository) {
         this.restClient = restClient;
         this.showFullRepository = showFullRepository;
+        this.commentsRepository = commentsRepository;
     }
     
     public List<ShowShort> obtenerShows(String query) {
@@ -88,6 +96,7 @@ public class TvMazeService {
             shows.add(new ShowShort(id, name, channel, summary, genres));        	
         	
         }
+        
     	return shows;
     }
     
@@ -145,7 +154,7 @@ public class TvMazeService {
             return apiResponse;
 
         } catch (RestClientResponseException e) {
-            log.error("Error al consumir la API de TVmaze, Código: {}", e.getStatusCode());
+            log.error("Error al consumir el API de TVmaze, Código: {}", e.getStatusCode());
             if (e.getStatusCode().is4xxClientError()) {
                 throw HttpClientErrorException.create(
                         e.getStatusCode(), e.getStatusText(), e.getResponseHeaders(), e.getResponseBodyAsByteArray(), null);
@@ -156,6 +165,21 @@ public class TvMazeService {
         } catch (Exception e) {
             log.error("Fallo general para el show ID {}: {}", id, e.getMessage());
             throw new RuntimeException("Error General", e);
+        }
+    }
+    
+    
+    public HttpStatusCode escribirComentario (Comments comment) {
+    	
+        try {
+        	commentsRepository.save(comment);
+        	log.info("Comentario guardado");
+
+        	return ResponseEntity.status(HttpStatus.CREATED).build().getStatusCode();
+        	
+        } catch (DataAccessException e) {
+            log.error("Error al guardar el comentario en MongoDB para el show ID {}: {}", comment.showId(), e.getMessage());
+            throw new RuntimeException("Error en el guardado del comentario", e);
         }
     }
 

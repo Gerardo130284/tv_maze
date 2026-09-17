@@ -2,13 +2,17 @@ package tv.maze.controller;
 
 import java.util.List;
 
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import tv.maze.model.Comments;
 import tv.maze.model.ShowFull;
 import tv.maze.model.ShowShort;
 import tv.maze.service.TvMazeService;
@@ -41,4 +45,11 @@ public class TvMazeController {
         ShowFull show = tvMazeService.getShowById(id);
         return ResponseEntity.ok(show);
     }
+    
+    
+    @PostMapping("/comments")
+    public ResponseEntity<HttpStatusCode> comentario(@RequestBody Comments comment) {           
+        return ResponseEntity.ok(tvMazeService.escribirComentario(comment));
+    }
+
 }
