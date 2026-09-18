@@ -23,6 +23,7 @@ import tv.maze.model.ShowFull;
 import tv.maze.model.ShowFullDocument;
 import tv.maze.model.ShowShort;
 
+
 @Slf4j
 @Service
 public class TvMazeService {
@@ -93,12 +94,39 @@ public class TvMazeService {
                 }
             }
 
-            shows.add(new ShowShort(id, name, channel, summary, genres));        	
-        	
+
+            List<Comments> comments = new ArrayList<>(); 
+            
+            try {
+                List<Comments> dbComentarios = commentsRepository.findByShowId(id);
+                for (Comments comentario : dbComentarios) {
+                	//comments.add(new ShowShort.CommentDTO(comentario.comment(), comentario.rating()));
+                	comments.add(comentario);
+                }
+            } catch (DataAccessException e) {
+                log.error("Error en MongoDB para el show ID {}: {}", id, e.getMessage());
+            }
+                        
+            shows.add(new ShowShort(id, name, channel, summary, genres, null)); 
+            shows.add(new ShowShort(id, name, channel, summary, genres, comments));
+
+            //shows.add(new ShowShort(id, name, channel, summary, genres));  
+
         }
         
     	return shows;
     }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     public ShowFull obtenerDetalleShow(int id) {

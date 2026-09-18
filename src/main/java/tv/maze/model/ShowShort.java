@@ -9,7 +9,13 @@ public record ShowShort (
 	String name,
 	String channel,
 	String summary,
-	List<String> genres
+	List<String> genres,
+	List<Comments> comments
 	
+	){
 	
-	){}
+    public record CommentDTO(
+            String comment,
+            int rating
+        ) {}
+}
