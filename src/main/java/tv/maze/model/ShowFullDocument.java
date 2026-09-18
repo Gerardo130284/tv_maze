@@ -1,9 +1,12 @@
 package tv.maze.model;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.time.Instant;
 import java.util.List;
 
 @Document(collection = "show")
@@ -33,9 +36,14 @@ public record ShowFullDocument(
     Image image,
     String summary,
     int updated,
-    
+
     @Field("links") 
-    Links links
+    Links links, 
+    
+    //CONFIGURACIÓN DE CACHÉ DE 1 DÍA: MongoDB eliminará el registro 86400 segundos después de esta hora
+    @Indexed(expireAfterSeconds = 86400)
+    @Field("created_at")
+    Instant createdAt
     
 ) {
 
@@ -76,7 +84,7 @@ public record ShowFullDocument(
             api._links() != null ? new Links(
                 api._links().self() != null ? new Links.Self(api._links().self().href()) : null,
                 api._links().previousEpisode() != null ? new Links.PreviousEpisode(api._links().previousEpisode().href(), api._links().previousEpisode().name()) : null
-            ) : null
+            ) : null, null
         );
     }
     

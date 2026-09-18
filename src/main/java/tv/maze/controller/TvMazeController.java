@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
 import tv.maze.model.Comments;
 import tv.maze.model.ShowFull;
 import tv.maze.model.ShowShort;
@@ -48,7 +49,7 @@ public class TvMazeController {
     
     
     @PostMapping("/comments")
-    public ResponseEntity<HttpStatusCode> comentario(@RequestBody Comments comment) {           
+    public ResponseEntity<HttpStatusCode> comentario(@Valid  @RequestBody Comments comment) {           
         return ResponseEntity.ok(tvMazeService.escribirComentario(comment));
     }
 
